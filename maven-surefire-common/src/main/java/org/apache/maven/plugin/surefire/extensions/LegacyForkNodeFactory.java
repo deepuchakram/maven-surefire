@@ -1,4 +1,4 @@
-package org.apache.maven.surefire.booter;
+package org.apache.maven.plugin.surefire.extensions;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,17 +19,21 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
-import org.apache.maven.surefire.cli.CommandLineOption;
+import org.apache.maven.surefire.extensions.ForkChannel;
+import org.apache.maven.surefire.extensions.ForkNodeFactory;
 
-import java.util.List;
+import javax.annotation.Nonnull;
+import java.io.IOException;
 
 /**
- * CLI options in plugin (main) JVM process.
  *
- * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
- * @since 2.19
  */
-interface MainCliOptionsAware
+public class LegacyForkNodeFactory implements ForkNodeFactory
 {
-    void setMainCliOptions( List<CommandLineOption> mainCliOptions );
+    @Nonnull
+    @Override
+    public ForkChannel createForkChannel() throws IOException
+    {
+        return new LegacyForkChannel();
+    }
 }

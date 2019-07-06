@@ -1,4 +1,4 @@
-package org.apache.maven.surefire.booter;
+package org.apache.maven.plugin.surefire.booterclient.output;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -9,7 +9,7 @@ package org.apache.maven.surefire.booter;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -19,12 +19,25 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
-import org.apache.maven.surefire.testset.RunOrderParameters;
+import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
+import org.apache.maven.surefire.extensions.StdOutStreamLine;
 
 /**
- * @author Kristian Rosenvold
+ *
  */
-interface RunOrderParametersAware
+public class NativeStdOutStreamConsumer
+        implements StdOutStreamLine
 {
-    void setRunOrderParameters( RunOrderParameters runOrderParameters );
+    private final ConsoleLogger logger;
+
+    public NativeStdOutStreamConsumer( ConsoleLogger logger )
+    {
+        this.logger = logger;
+    }
+
+    @Override
+    public void handleLine( String line )
+    {
+        logger.info( line );
+    }
 }

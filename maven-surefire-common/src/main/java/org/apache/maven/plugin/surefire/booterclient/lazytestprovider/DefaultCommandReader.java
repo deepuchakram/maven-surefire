@@ -20,7 +20,6 @@ package org.apache.maven.plugin.surefire.booterclient.lazytestprovider;
  */
 
 import org.apache.maven.surefire.booter.Command;
-import org.apache.maven.surefire.booter.MasterProcessCommand;
 
 import java.io.IOException;
 
@@ -31,14 +30,9 @@ import java.io.IOException;
  * @since 2.19
  * @see org.apache.maven.surefire.booter.Command
  */
-public abstract class AbstractCommandStream
-    extends AbstractForkInputStream
+public abstract class DefaultCommandReader
+        extends AbstractCommandReader
 {
-    private byte[] currentBuffer;
-    private int currentPos;
-
-    protected abstract boolean isClosed();
-
     /**
      * Opposite to {@link #isClosed()}.
      * @return {@code true} if not closed
@@ -62,59 +56,35 @@ public abstract class AbstractCommandStream
     protected abstract Command nextCommand();
 
     /**
-     * Returns quietly and immediately.
-     */
-    protected final void invalidateInternalBuffer()
-    {
-        currentBuffer = null;
-        currentPos = 0;
-    }
-
-    /**
      * Used by single thread in StreamFeeder class.
      *
      * @return {@inheritDoc}
      * @throws IOException {@inheritDoc}
      */
-    @SuppressWarnings( "checkstyle:magicnumber" )
     @Override
-    public int read()
+    public Command readNextCommand()
         throws IOException
     {
+        tryFlush();
+
         if ( isClosed() )
         {
-            tryFlush();
-            return -1;
+            return null;
         }
 
-        if ( currentBuffer == null )
+        if ( !canContinue() )
         {
-            tryFlush();
-
-            if ( !canContinue() )
-            {
-                close();
-                return -1;
-            }
-
-            beforeNextCommand();
-
-            if ( isClosed() )
-            {
-                return -1;
-            }
-
-            Command cmd = nextCommand();
-            MasterProcessCommand cmdType = cmd.getCommandType();
-            currentBuffer = cmdType.hasDataType() ? cmdType.encode( cmd.getData() ) : cmdType.encode();
+            close();
+            return null;
         }
 
-        int b =  currentBuffer[currentPos++] & 0xff;
-        if ( currentPos == currentBuffer.length )
+        beforeNextCommand();
+
+        if ( isClosed() )
         {
-            currentBuffer = null;
-            currentPos = 0;
+            return null;
         }
-        return b;
+
+        return nextCommand();
     }
 }

@@ -21,12 +21,14 @@ package org.apache.maven.plugin.surefire.booterclient.lazytestprovider;
 
 import org.apache.maven.surefire.booter.Command;
 import org.apache.maven.surefire.booter.MasterProcessCommand;
+import org.apache.maven.surefire.booter.spi.DefaultMasterProcessChannelDecoder;
+import org.apache.maven.surefire.providerapi.MasterProcessChannelDecoder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -34,7 +36,6 @@ import static org.apache.maven.plugin.surefire.booterclient.lazytestprovider.Tes
 import static org.apache.maven.surefire.booter.Command.NOOP;
 import static org.apache.maven.surefire.booter.Command.SKIP_SINCE_NEXT_TEST;
 import static org.apache.maven.surefire.booter.MasterProcessCommand.SHUTDOWN;
-import static org.apache.maven.surefire.booter.MasterProcessCommand.decode;
 import static org.apache.maven.surefire.booter.Shutdown.EXIT;
 import static org.apache.maven.surefire.booter.Shutdown.KILL;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -137,15 +138,43 @@ public class TestLessInputStreamBuilderTest
             throws IOException
     {
         TestLessInputStreamBuilder builder = new TestLessInputStreamBuilder();
-        TestLessInputStream pluginIs = builder.build();
+        final TestLessInputStream pluginIs = builder.build();
+        InputStream is = new InputStream()
+        {
+            private byte[] buffer;
+            private int idx;
+
+            @Override
+            public int read() throws IOException
+            {
+                if ( buffer == null )
+                {
+                    idx = 0;
+                    Command cmd = pluginIs.readNextCommand();
+                    buffer = cmd == null ? null : cmd.getCommandType().encode();
+                }
+
+                if ( buffer != null )
+                {
+                    byte b = buffer[idx++];
+                    if ( idx == buffer.length )
+                    {
+                        buffer = null;
+                        idx = 0;
+                    }
+                    return b;
+                }
+                throw new IOException();
+            }
+        };
+        MasterProcessChannelDecoder decoder = new DefaultMasterProcessChannelDecoder( is, null );
         builder.getImmediateCommands().shutdown( KILL );
         builder.getImmediateCommands().noop();
-        DataInputStream is = new DataInputStream( pluginIs );
-        Command bye = decode( is );
+        Command bye = decoder.decode();
         assertThat( bye, is( notNullValue() ) );
         assertThat( bye.getCommandType(), is( SHUTDOWN ) );
         assertThat( bye.getData(), is( KILL.name() ) );
-        Command noop = decode( is );
+        Command noop = decoder.decode();
         assertThat( noop, is( notNullValue() ) );
         assertThat( noop.getCommandType(), is( MasterProcessCommand.NOOP ) );
     }

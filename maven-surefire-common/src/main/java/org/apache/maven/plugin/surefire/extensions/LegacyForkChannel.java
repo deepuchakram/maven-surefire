@@ -1,4 +1,4 @@
-package org.apache.maven.surefire.booter;
+package org.apache.maven.plugin.surefire.extensions;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,10 +19,32 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
+import org.apache.maven.surefire.extensions.ExecutableCommandline;
+import org.apache.maven.surefire.extensions.ForkChannel;
+
+import javax.annotation.Nonnull;
+import java.io.IOException;
+
 /**
- * Command listener interface.
+ *
  */
-public interface CommandListener
+final class LegacyForkChannel implements ForkChannel
 {
-    void update( Command command );
+    @Override
+    public String getForkNodeConnectionString()
+    {
+        return "pipe://";
+    }
+
+    @Nonnull
+    @Override
+    public ExecutableCommandline createExecutableCommandline() throws IOException
+    {
+        return new PipeProcessExecutor();
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+    }
 }

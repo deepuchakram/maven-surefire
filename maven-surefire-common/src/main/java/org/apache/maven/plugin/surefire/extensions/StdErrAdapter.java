@@ -1,4 +1,4 @@
-package org.apache.maven.surefire.booter;
+package org.apache.maven.plugin.surefire.extensions;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,10 +19,24 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
+import org.apache.maven.surefire.extensions.StdErrStreamLine;
+import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
+
 /**
- * @author Kristian Rosenvold
+ *
  */
-interface SurefireClassLoadersAware
+final class StdErrAdapter implements StreamConsumer
 {
-    void setClassLoaders( ClassLoader testClassLoader );
+    private final StdErrStreamLine stdErr;
+
+    StdErrAdapter( StdErrStreamLine stdErr )
+    {
+        this.stdErr = stdErr;
+    }
+
+    @Override
+    public void consumeLine( String line )
+    {
+        stdErr.handleLine( line );
+    }
 }

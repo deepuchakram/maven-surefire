@@ -26,6 +26,7 @@ import org.apache.maven.artifact.handler.ArtifactHandler;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.surefire.extensions.SurefireConsoleOutputReporter;
+import org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory;
 import org.apache.maven.plugin.surefire.extensions.SurefireStatelessReporter;
 import org.apache.maven.plugin.surefire.extensions.SurefireStatelessTestsetInfoReporter;
 import org.apache.maven.plugins.annotations.Component;
@@ -73,6 +74,7 @@ import org.apache.maven.surefire.booter.StartupConfiguration;
 import org.apache.maven.surefire.booter.SurefireBooterForkException;
 import org.apache.maven.surefire.booter.SurefireExecutionException;
 import org.apache.maven.surefire.cli.CommandLineOption;
+import org.apache.maven.surefire.extensions.ForkNodeFactory;
 import org.apache.maven.surefire.providerapi.SurefireProvider;
 import org.apache.maven.surefire.report.ReporterConfiguration;
 import org.apache.maven.surefire.suite.RunResult;
@@ -830,6 +832,8 @@ public abstract class AbstractSurefireMojo
     protected abstract void setUseModulePath( boolean useModulePath );
 
     protected abstract String getEnableProcessChecker();
+
+    protected abstract ForkNodeFactory getForkNode();
 
     /**
      * This plugin MOJO artifact.
@@ -2254,6 +2258,14 @@ public abstract class AbstractSurefireMojo
                                               getConsoleLogger() );
     }
 
+    // todo this is in separate method and can be better tested than whole method createForkConfiguration()
+    @Nonnull
+    private ForkNodeFactory getForkNodeFactory()
+    {
+        ForkNodeFactory forkNode = getForkNode();
+        return forkNode == null ? new SurefireForkNodeFactory() : forkNode;
+    }
+
     @Nonnull
     private ForkConfiguration createForkConfiguration( Platform platform )
     {
@@ -2262,6 +2274,8 @@ public abstract class AbstractSurefireMojo
         Artifact shadeFire = getShadefireArtifact();
 
         Classpath bootClasspath = getArtifactClasspath( shadeFire != null ? shadeFire : surefireBooterArtifact );
+
+        ForkNodeFactory forkNode = getForkNodeFactory();
 
         if ( canExecuteProviderWithModularPath( platform ) )
         {
@@ -2277,7 +2291,8 @@ public abstract class AbstractSurefireMojo
                     getEffectiveForkCount(),
                     reuseForks,
                     platform,
-                    getConsoleLogger() );
+                    getConsoleLogger(),
+                    forkNode );
         }
         else if ( getClassLoaderConfiguration().isManifestOnlyJarRequestedAndUsable() )
         {
@@ -2293,7 +2308,8 @@ public abstract class AbstractSurefireMojo
                     getEffectiveForkCount(),
                     reuseForks,
                     platform,
-                    getConsoleLogger() );
+                    getConsoleLogger(),
+                    forkNode );
         }
         else
         {
@@ -2309,7 +2325,8 @@ public abstract class AbstractSurefireMojo
                     getEffectiveForkCount(),
                     reuseForks,
                     platform,
-                    getConsoleLogger() );
+                    getConsoleLogger(),
+                    forkNode );
         }
     }
 

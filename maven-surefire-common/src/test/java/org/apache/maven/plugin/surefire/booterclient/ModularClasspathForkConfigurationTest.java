@@ -66,7 +66,7 @@ public class ModularClasspathForkConfigurationTest
         ModularClasspathForkConfiguration config = new ModularClasspathForkConfiguration( booter, tmp, "", pwd,
                 new Properties(), "",
                 Collections.<String, String>emptyMap(), new String[0], true, 1, true,
-                new Platform(), new NullConsoleLogger() );
+                new Platform(), new NullConsoleLogger(), null );
 
         File patchFile = new File( "target" + separatorChar + "test-classes" );
         File descriptor = new File( tmp, "module-info.class" );

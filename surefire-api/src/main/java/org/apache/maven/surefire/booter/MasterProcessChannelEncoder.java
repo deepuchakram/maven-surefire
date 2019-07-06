@@ -20,12 +20,30 @@ package org.apache.maven.surefire.booter;
  */
 
 /**
- * See the plugin configuration parameter {@code skipAfterFailureCount}.
+ * magic number : opcode [: opcode specific data]*
+ * <br>
  *
  * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
- * @since 2.19
+ * @since 3.0.0-M4
  */
-interface FailFastAware
+public final class MasterProcessChannelEncoder
 {
-    void setSkipAfterFailureCount( int skipAfterFailureCount );
+
+    private static final String MAGIC_NUMBER = ":maven:surefire:std:out:";
+
+    /**
+     * Encodes opcode and data.
+     *
+     * @param operation opcode
+     * @param data   data
+     * @return encoded command
+     */
+    private static StringBuilder encode( String operation, String data )
+    {
+        StringBuilder s = new StringBuilder( 128 )
+                .append( MAGIC_NUMBER )
+                .append( operation );
+
+        return data == null ? s : s.append( ':' ).append( data );
+    }
 }

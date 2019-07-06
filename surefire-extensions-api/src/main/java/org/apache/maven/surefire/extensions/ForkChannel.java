@@ -1,4 +1,4 @@
-package org.apache.maven.surefire.booter;
+package org.apache.maven.surefire.extensions;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,12 +19,24 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
-import org.apache.maven.surefire.testset.DirectoryScannerParameters;
+import javax.annotation.Nonnull;
+import java.io.Closeable;
+import java.io.IOException;
 
 /**
- * @author Kristian Rosenvold
+ * The constructor prepares I/O or throws {@link IOException}. Open channel can be closed and closes all streams.
+ * <br>
+ * The forked JVM uses the {@link #createExecutableCommandline() connection string}.
+ * The executable CLI {@link #createExecutableCommandline()} is using the streams. This method and constructor should
+ * not be blocked while establishing the connection.
  */
-interface DirectoryScannerParametersAware
+public interface ForkChannel extends Closeable
 {
-    void setDirectoryScannerParameters( DirectoryScannerParameters directoryScanner );
+    String getForkNodeConnectionString();
+
+    @Nonnull
+    ExecutableCommandline createExecutableCommandline() throws IOException;
+
+    @Override
+    void close() throws IOException;
 }

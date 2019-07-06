@@ -50,6 +50,11 @@ public class StartupConfiguration
         this.processChecker = processChecker;
     }
 
+    public String getInterProcessChannelConfiguration()
+    {
+        return "pipe:std:in";
+    }
+
     public boolean isProviderMainClass()
     {
         return providerClassName.endsWith( "#main" );

@@ -1,4 +1,4 @@
-package org.apache.maven.surefire.booter;
+package org.apache.maven.plugin.surefire.extensions;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,12 +19,24 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
-import org.apache.maven.surefire.testset.TestArtifactInfo;
+import org.apache.maven.surefire.extensions.StdOutStreamLine;
+import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 
 /**
- * @author Kristian Rosenvold
+ *
  */
-interface TestArtifactInfoAware
+final class StdOutAdapter implements StreamConsumer
 {
-    void setTestArtifactInfo( TestArtifactInfo testArtifactInfo );
+    private final StdOutStreamLine stdOut;
+
+    StdOutAdapter( StdOutStreamLine stdOut )
+    {
+        this.stdOut = stdOut;
+    }
+
+    @Override
+    public void consumeLine( String line )
+    {
+        stdOut.handleLine( line );
+    }
 }

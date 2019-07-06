@@ -42,6 +42,7 @@ import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
 import org.apache.maven.surefire.booter.ClassLoaderConfiguration;
 import org.apache.maven.surefire.booter.Classpath;
 import org.apache.maven.surefire.booter.StartupConfiguration;
+import org.apache.maven.surefire.extensions.ForkNodeFactory;
 import org.apache.maven.surefire.suite.RunResult;
 import org.codehaus.plexus.logging.Logger;
 import org.junit.Before;

@@ -22,7 +22,7 @@ package org.apache.maven.plugin.surefire.booterclient;
 import org.apache.maven.plugin.surefire.CommonReflector;
 import org.apache.maven.plugin.surefire.StartupReportConfiguration;
 import org.apache.maven.plugin.surefire.SurefireProperties;
-import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.AbstractForkInputStream;
+import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.AbstractCommandReader;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.NotifiableTestStream;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.OutputStreamFlushableCommandline;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessInputStream;
@@ -38,7 +38,6 @@ import org.apache.maven.surefire.extensions.util.CommandlineStreams;
 import org.apache.maven.surefire.extensions.util.CountdownCloseable;
 import org.apache.maven.surefire.extensions.util.LineConsumerThread;
 import org.apache.maven.surefire.extensions.util.StreamFeeder;
-import org.apache.maven.surefire.shared.utils.cli.CommandLineException;
 import org.apache.maven.surefire.booter.AbstractPathConfiguration;
 import org.apache.maven.surefire.booter.PropertiesWrapper;
 import org.apache.maven.surefire.booter.ProviderConfiguration;
@@ -47,6 +46,8 @@ import org.apache.maven.surefire.booter.Shutdown;
 import org.apache.maven.surefire.booter.StartupConfiguration;
 import org.apache.maven.surefire.booter.SurefireBooterForkException;
 import org.apache.maven.surefire.booter.SurefireExecutionException;
+import org.apache.maven.surefire.extensions.ForkChannel;
+import org.apache.maven.surefire.extensions.ForkNodeFactory;
 import org.apache.maven.surefire.providerapi.SurefireProvider;
 import org.apache.maven.surefire.report.StackTraceWriter;
 import org.apache.maven.surefire.suite.RunResult;
@@ -79,7 +80,6 @@ import static java.lang.StrictMath.min;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.addAll;
-import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -192,7 +192,7 @@ public class ForkStarter
                 {
                     closeable.close();
                 }
-                catch ( IOException e )
+                catch ( IOException | RuntimeException e )
                 {
                     // This error does not fail a test and does not necessarily mean that the forked JVM std/out stream
                     // was not closed, see ThreadedStreamConsumer. This error means that JVM wrote messages to a native
@@ -212,11 +212,17 @@ public class ForkStarter
         @Override
         public void close()
         {
-            run();
-            testProvidingInputStream.clear();
-            if ( inputStreamCloserHook != null )
+            try
             {
-                removeShutdownHook( inputStreamCloserHook );
+                run();
+            }
+            finally
+            {
+                testProvidingInputStream.clear();
+                if ( inputStreamCloserHook != null )
+                {
+                    removeShutdownHook( inputStreamCloserHook );
+                }
             }
         }
 
@@ -289,7 +295,8 @@ public class ForkStarter
             defaultReporterFactories.add( forkedReporterFactory );
             ForkClient forkClient =
                     new ForkClient( forkedReporterFactory, stream, log, new AtomicBoolean(), forkNumber );
-            return fork( null, props, forkClient, effectiveSystemProperties, forkNumber, stream, false );
+            return fork( null, props, forkClient, effectiveSystemProperties, forkNumber, stream,
+                    forkConfiguration.getForkNodeFactory(), false );
         }
         finally
         {
@@ -379,7 +386,8 @@ public class ForkStarter
                         try
                         {
                             return fork( null, new PropertiesWrapper( providerProperties ), forkClient,
-                                    effectiveSystemProperties, forkNumber, testProvidingInputStream, true );
+                                    effectiveSystemProperties, forkNumber, testProvidingInputStream,
+                                    forkConfiguration.getForkNodeFactory(), true );
                         }
                         finally
                         {
@@ -453,7 +461,8 @@ public class ForkStarter
                         {
                             return fork( testSet,
                                          new PropertiesWrapper( providerConfiguration.getProviderProperties() ),
-                                         forkClient, effectiveSystemProperties, forkNumber, stream, false );
+                                         forkClient, effectiveSystemProperties, forkNumber, stream,
+                                         forkConfiguration.getForkNodeFactory(), false );
                         }
                         finally
                         {
@@ -549,21 +558,25 @@ public class ForkStarter
 
     private RunResult fork( Object testSet, PropertiesWrapper providerProperties, ForkClient forkClient,
                             SurefireProperties effectiveSystemProperties, int forkNumber,
-                            AbstractForkInputStream commandInputStream, boolean readTestsFromInStream )
+                            AbstractCommandReader commandReader, ForkNodeFactory forkNodeFactory,
+                            boolean readTestsFromInStream )
         throws SurefireBooterForkException
     {
         final String tempDir;
         final File surefireProperties;
         final File systPropsFile;
+        final ForkChannel forkChannel;
         try
         {
+            forkChannel = forkNodeFactory.createForkChannel();
             tempDir = forkConfiguration.getTempDirectory().getCanonicalPath();
             BooterSerializer booterSerializer = new BooterSerializer( forkConfiguration );
             Long pluginPid = forkConfiguration.getPluginPlatform().getPluginPid();
-            surefireProperties = booterSerializer.serialize( providerProperties, providerConfiguration,
-                    startupConfiguration, testSet, readTestsFromInStream, pluginPid, forkNumber );
-
             log.debug( "Determined Maven Process ID " + pluginPid );
+            String connectionString = forkChannel.getForkNodeConnectionString();
+            log.debug( "Fork Channel [" + forkNumber + "] connection string " + connectionString );
+            surefireProperties = booterSerializer.serialize( providerProperties, providerConfiguration,
+                    startupConfiguration, testSet, readTestsFromInStream, pluginPid, forkNumber, connectionString );
 
             if ( effectiveSystemProperties != null )
             {
@@ -588,10 +601,7 @@ public class ForkStarter
         OutputStreamFlushableCommandline cli =
                 forkConfiguration.createCommandLine( startupConfiguration, forkNumber, dumpLogDir );
 
-        if ( commandInputStream != null )
-        {
-            commandInputStream.setFlushReceiverProvider( cli );
-        }
+        commandReader.setFlushReceiverProvider( cli );
 
         cli.createArg().setValue( tempDir );
         cli.createArg().setValue( DUMP_FILE_PREFIX + forkNumber );
@@ -602,7 +612,7 @@ public class ForkStarter
         }
 
         ThreadedStreamConsumer eventConsumer = new ThreadedStreamConsumer( forkClient );
-        CloseableCloser closer = new CloseableCloser( forkNumber, eventConsumer, requireNonNull( commandInputStream ) );
+        CloseableCloser closer = new CloseableCloser( forkNumber, eventConsumer, commandReader );
 
         log.debug( "Forking command line: " + cli );
 
@@ -615,6 +625,8 @@ public class ForkStarter
         DefaultReporterFactory reporter = forkClient.getDefaultReporterFactory();
         currentForkClients.add( forkClient );
         CountdownCloseable countdownCloseable = new CountdownCloseable( eventConsumer, 2 );
+        //todo implement extension: forkChannel.createExecutableCommandline()
+        //todo implement extension: executableCommandline.executeCommandLineAsCallable(...)
         try ( CommandlineExecutor exec = new CommandlineExecutor( cli, countdownCloseable ) )
         {
             // default impl of the extension - solves everything including the encoder/decoder, Process starter,
@@ -623,7 +635,7 @@ public class ForkStarter
             // BEGIN: beginning of the call of the extension
             CommandlineStreams streams = exec.execute();
             closer.addCloseable( streams );
-            in = new StreamFeeder( "std-in-fork-" + forkNumber, streams.getStdInChannel(), commandInputStream );
+            in = new StreamFeeder( "std-in-fork-" + forkNumber, streams.getStdInChannel(), commandReader );
             in.start();
             out = new LineConsumerThread( "std-out-fork-" + forkNumber, streams.getStdOutChannel(),
                                           eventConsumer, countdownCloseable );
@@ -652,8 +664,9 @@ public class ForkStarter
             out.disable();
             err.disable();
         }
-        catch ( CommandLineException e )
+        catch ( Exception e )
         {
+            // CommandLineException from pipes and IOException from sockets
             runResult = failure( reporter.getGlobalRunStatistics().getRunResult(), e );
             String cliErr = e.getLocalizedMessage();
             Throwable cause = e.getCause();
@@ -665,7 +678,7 @@ public class ForkStarter
             currentForkClients.remove( forkClient );
             try
             {
-                Closeable c = forkClient.isSaidGoodBye() ? closer : commandInputStream;
+                Closeable c = forkClient.isSaidGoodBye() ? closer : commandReader;
                 c.close();
             }
             catch ( IOException e )
@@ -710,7 +723,7 @@ public class ForkStarter
                     //noinspection ThrowFromFinallyBlock
                     throw new SurefireBooterForkException( "There was an error in the forked process"
                                                         + detail
-                                                        + ( stackTrace == null ? "" : stackTrace ), cause );
+                                                        + ( stackTrace == null ? "" : "\n" + stackTrace ), cause );
                 }
                 if ( !forkClient.isSaidGoodBye() )
                 {

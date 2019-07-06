@@ -19,6 +19,10 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
+import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
+import org.apache.maven.plugin.surefire.log.api.NullConsoleLogger;
+import org.apache.maven.surefire.booter.spi.DefaultMasterProcessChannelDecoder;
+import org.apache.maven.surefire.providerapi.MasterProcessChannelDecoder;
 import org.apache.maven.surefire.testset.TestSetFailedException;
 import org.junit.After;
 import org.junit.Before;
@@ -29,7 +33,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
@@ -39,8 +42,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -61,7 +63,6 @@ public class CommandReaderTest
     private static final long TEST_TIMEOUT = 15_000L;
 
     private final BlockingQueue<Byte> blockingStream = new LinkedBlockingQueue<>();
-    private InputStream realInputStream;
     private CommandReader reader;
 
     static class A
@@ -83,18 +84,19 @@ public class CommandReaderTest
     @Before
     public void init()
     {
+        //noinspection ResultOfMethodCallIgnored
         Thread.interrupted();
-        realInputStream = System.in;
+        InputStream realInputStream = new SystemInputStream();
         addTestToPipeline( getClass().getName() );
-        System.setIn( new SystemInputStream() );
-        reader = CommandReader.getReader();
+        ConsoleLogger logger = new NullConsoleLogger();
+        MasterProcessChannelDecoder decoder = new DefaultMasterProcessChannelDecoder( realInputStream, logger );
+        reader = new CommandReader( decoder, Shutdown.DEFAULT, logger );
     }
 
     @After
     public void deinit()
     {
         reader.stop();
-        System.setIn( realInputStream );
     }
 
     @Test
@@ -242,24 +244,20 @@ public class CommandReaderTest
 
     private void addTestToPipeline( String cls )
     {
-        byte[] clazz = cls.getBytes( ISO_8859_1 );
-        ByteBuffer buffer = ByteBuffer.allocate( 8 + clazz.length ).putInt(
-                MasterProcessCommand.RUN_CLASS.getId() ).putInt( clazz.length ).put( clazz );
-        buffer.rewind();
-        for ( ; buffer.hasRemaining(); )
+        String cmd = ":maven-surefire-std-out:"
+            + MasterProcessCommand.RUN_CLASS.getOpcode() + ':' + cls + '\n';
+        for ( byte cmdByte : cmd.getBytes( US_ASCII ) )
         {
-            blockingStream.add( buffer.get() );
+            blockingStream.add( cmdByte );
         }
     }
 
     private void addEndOfPipeline()
     {
-        ByteBuffer buffer = ByteBuffer.allocate( 8 ).putInt( MasterProcessCommand.TEST_SET_FINISHED.getId() ).putInt(
-                0 );
-        buffer.rewind();
-        for ( ; buffer.hasRemaining(); )
+        String cmd = ":maven-surefire-std-out:" + MasterProcessCommand.TEST_SET_FINISHED.getOpcode() + '\n';
+        for ( byte cmdByte : cmd.getBytes( US_ASCII ) )
         {
-            blockingStream.add( buffer.get() );
+            blockingStream.add( cmdByte );
         }
     }
 

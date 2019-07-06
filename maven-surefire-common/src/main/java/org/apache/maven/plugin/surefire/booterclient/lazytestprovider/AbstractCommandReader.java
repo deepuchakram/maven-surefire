@@ -19,32 +19,34 @@ package org.apache.maven.plugin.surefire.booterclient.lazytestprovider;
  * under the License.
  */
 
+import org.apache.maven.surefire.extensions.CommandReader;
+
 import java.io.IOException;
-import java.io.InputStream;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Reader stream sends bytes to forked jvm std-{@link InputStream input-stream}.
+ * Stream reader returns bytes which ar finally sent to the forked jvm std-input-stream.
  *
  * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
  * @since 2.19
  */
-public abstract class AbstractForkInputStream
-    extends InputStream
-    implements NotifiableTestStream
+public abstract class AbstractCommandReader
+        implements CommandReader, DefferedChannelCommandSender
 {
     private volatile FlushReceiverProvider flushReceiverProvider;
 
     /**
      * @param flushReceiverProvider the provider for a flush receiver.
      */
+    @Override
     public void setFlushReceiverProvider( FlushReceiverProvider flushReceiverProvider )
     {
         this.flushReceiverProvider = requireNonNull( flushReceiverProvider );
     }
 
-    protected boolean tryFlush()
+    @Override
+    public void tryFlush()
         throws IOException
     {
         if ( flushReceiverProvider != null )
@@ -53,9 +55,7 @@ public abstract class AbstractForkInputStream
             if ( flushReceiver != null )
             {
                 flushReceiver.flush();
-                return true;
             }
         }
-        return false;
     }
 }
