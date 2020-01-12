@@ -21,6 +21,7 @@ package org.apache.maven.surefire.util.internal;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Creates new daemon Thread.
@@ -30,14 +31,22 @@ public final class DaemonThreadFactory
 {
     private static final ThreadFactory DEFAULT_THREAD_FACTORY = Executors.defaultThreadFactory();
 
+    private static final AtomicInteger POOL_NUMBER = new AtomicInteger( 1 );
+
+    private final AtomicInteger threadNumber = new AtomicInteger( 1 );
+
+    private final String namePrefix;
+
     private DaemonThreadFactory()
     {
+        namePrefix = "pool-" + POOL_NUMBER.getAndIncrement() + "-thread-";
     }
 
     @Override
     public Thread newThread( Runnable r )
     {
         Thread t = DEFAULT_THREAD_FACTORY.newThread( r );
+        t.setName( namePrefix + threadNumber.getAndIncrement() );
         t.setDaemon( true );
         return t;
     }

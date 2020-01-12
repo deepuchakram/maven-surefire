@@ -498,7 +498,6 @@
                 <compilerArgs>
                   <arg>-Xdoclint:all</arg>
                 </compilerArgs>
-                <verbose>true</verbose>
               </configuration>
             </execution>
           </executions>
