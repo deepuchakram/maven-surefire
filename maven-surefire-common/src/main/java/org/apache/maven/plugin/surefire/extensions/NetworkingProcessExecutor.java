@@ -61,12 +61,12 @@ final class NetworkingProcessExecutor implements ExecutableCommandline
 
     @Nonnull
     @Override
-    public <T> Callable<Integer> executeCommandLineAsCallable( @Nonnull T cli,
-                                                               @Nonnull final CommandReader commands,
-                                                               @Nonnull final EventHandler events,
-                                                               StdOutStreamLine stdOut,
-                                                               StdErrStreamLine stdErr,
-                                                               @Nonnull Runnable runAfterProcessTermination )
+    public Callable<Integer> executeCommandLineAsCallable( @Nonnull Commandline cli,
+                                                           @Nonnull final CommandReader commands,
+                                                           @Nonnull final EventHandler events,
+                                                           StdOutStreamLine stdOut,
+                                                           StdErrStreamLine stdErr,
+                                                           @Nonnull Runnable runAfterProcessTermination )
             throws Exception
     {
         server.accept( null, new CompletionHandler<AsynchronousSocketChannel, Object>()
@@ -154,8 +154,8 @@ final class NetworkingProcessExecutor implements ExecutableCommandline
             }
         } );
 
-        return CommandLineUtils.executeCommandLineAsCallable( (Commandline) cli, null,
-                new StdOutAdapter( stdOut ), new StdErrAdapter( stdErr ), 0, runAfterProcessTermination, US_ASCII );
+        return CommandLineUtils.executeCommandLineAsCallable( cli, null,
+                new StdOutAdapter( stdOut ), stdErr, 0, runAfterProcessTermination, US_ASCII );
     }
 
     private static InputStream toInputStream( final AsynchronousSocketChannel client )

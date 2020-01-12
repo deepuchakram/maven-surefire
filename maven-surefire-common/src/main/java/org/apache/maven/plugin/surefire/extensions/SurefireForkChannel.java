@@ -25,6 +25,7 @@ import org.apache.maven.surefire.extensions.ForkChannel;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketOption;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,11 +50,21 @@ final class SurefireForkChannel implements ForkChannel
     {
         executorService = Executors.newCachedThreadPool( newDaemonThreadFactory() );
         server = open( withThreadPool( executorService ) );
-        server.setOption( SO_REUSEADDR, true );
-        server.setOption( TCP_NODELAY, true );
-        server.setOption( SO_KEEPALIVE, true );
+        setTrueOptions( SO_REUSEADDR, TCP_NODELAY, SO_KEEPALIVE );
         server.bind( new InetSocketAddress( 0 ) );
         serverPort = ( (InetSocketAddress) server.getLocalAddress() ).getPort();
+    }
+
+    @SafeVarargs
+    private final void setTrueOptions( SocketOption<Boolean>... options ) throws IOException
+    {
+        for ( SocketOption<Boolean> option : options )
+        {
+            if ( server.supportedOptions().contains( option ) )
+            {
+                server.setOption( option, true );
+            }
+        }
     }
 
     @Override

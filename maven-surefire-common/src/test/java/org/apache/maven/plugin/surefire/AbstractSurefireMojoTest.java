@@ -2122,6 +2122,12 @@ public class AbstractSurefireMojoTest
         }
 
         @Override
+        protected ForkNodeFactory getForkNode()
+        {
+            return null;
+        }
+
+        @Override
         protected Artifact getMojoArtifact()
         {
             return new DefaultArtifact( "org.apache.maven.surefire", "maven-surefire-plugin", createFromVersion( "1" ),

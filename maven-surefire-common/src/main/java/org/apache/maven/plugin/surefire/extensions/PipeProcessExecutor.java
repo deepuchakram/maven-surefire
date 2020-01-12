@@ -59,17 +59,16 @@ final class PipeProcessExecutor
 {
     @Override
     @Nonnull
-    public <T> Callable<Integer> executeCommandLineAsCallable( @Nonnull T cli,
-                                                               @Nonnull CommandReader commands,
-                                                               @Nonnull EventHandler events,
-                                                               StdOutStreamLine stdOut,
-                                                               StdErrStreamLine stdErr,
-                                                               @Nonnull Runnable runAfterProcessTermination )
+    public Callable<Integer> executeCommandLineAsCallable( @Nonnull Commandline cli,
+                                                           @Nonnull CommandReader commands,
+                                                           @Nonnull EventHandler events,
+                                                           StdOutStreamLine stdOut,
+                                                           StdErrStreamLine stdErr,
+                                                           @Nonnull Runnable runAfterProcessTermination )
             throws Exception
     {
-        return CommandLineUtils.executeCommandLineAsCallable( (Commandline) cli, new CommandReaderAdapter( commands ),
-                new EventHandlerAdapter( events ), new StdErrAdapter( stdErr ),
-                0, runAfterProcessTermination, US_ASCII );
+        return CommandLineUtils.executeCommandLineAsCallable( cli, new CommandReaderAdapter( commands ),
+                new EventHandlerAdapter( events ), stdErr, 0, runAfterProcessTermination, US_ASCII );
     }
 
     private static class EventHandlerAdapter implements StreamConsumer

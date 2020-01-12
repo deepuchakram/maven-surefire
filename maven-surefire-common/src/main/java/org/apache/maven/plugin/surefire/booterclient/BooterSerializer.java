@@ -107,7 +107,7 @@ class BooterSerializer
         throws IOException
     {
         SurefireProperties properties = new SurefireProperties( sourceProperties );
-        properties.setProperty( FORK_NODE_CONNECTION_STRING, forkNodeConnectionString );
+        properties.setNullableProperty( FORK_NODE_CONNECTION_STRING, forkNodeConnectionString );
         properties.setProperty( PLUGIN_PID, pid );
 
         AbstractPathConfiguration cp = startupConfiguration.getClasspathConfiguration();

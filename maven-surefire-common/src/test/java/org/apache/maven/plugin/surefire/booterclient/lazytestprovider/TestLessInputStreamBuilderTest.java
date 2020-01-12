@@ -32,8 +32,8 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import static org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessInputStream.TestLessInputStreamBuilder;
-import static org.apache.maven.surefire.booter.Command.NOOP;
+import static org.apache.maven.plugin.surefire.booterclient.lazytestprovider
+    .TestLessInputStream.TestLessInputStreamBuilder;
 import static org.apache.maven.surefire.booter.Command.SKIP_SINCE_NEXT_TEST;
 import static org.apache.maven.surefire.booter.MasterProcessCommand.SHUTDOWN;
 import static org.apache.maven.surefire.booter.Shutdown.EXIT;
@@ -88,7 +88,7 @@ public class TestLessInputStreamBuilderTest
         assertThat( is.availablePermits(), is( 1 ) );
         is.beforeNextCommand();
         assertThat( is.availablePermits(), is( 0 ) );
-        assertThat( is.nextCommand(), is( NOOP ) );
+        assertThat( is.nextCommand(), is( Command.NOOP ) );
         assertThat( is.availablePermits(), is( 0 ) );
         e.expect( NoSuchElementException.class );
         is.nextCommand();
@@ -106,7 +106,7 @@ public class TestLessInputStreamBuilderTest
         assertThat( is.availablePermits(), is( 2 ) );
         is.beforeNextCommand();
         assertThat( is.availablePermits(), is( 1 ) );
-        assertThat( is.nextCommand(), is( NOOP ) );
+        assertThat( is.nextCommand(), is( Command.NOOP ) );
         assertThat( is.availablePermits(), is( 1 ) );
         builder.getCachableCommands().skipSinceNextTest();
         assertThat( is.availablePermits(), is( 1 ) );
@@ -124,7 +124,7 @@ public class TestLessInputStreamBuilderTest
         builder.getCachableCommands().shutdown( EXIT );
         assertThat( is.availablePermits(), is( 2 ) );
         is.beforeNextCommand();
-        assertThat( is.nextCommand(), is( NOOP ) );
+        assertThat( is.nextCommand(), is( Command.NOOP ) );
         assertThat( is.availablePermits(), is( 1 ) );
         is.beforeNextCommand();
         assertThat( is.nextCommand().getCommandType(), is( SHUTDOWN ) );
@@ -151,7 +151,15 @@ public class TestLessInputStreamBuilderTest
                 {
                     idx = 0;
                     Command cmd = pluginIs.readNextCommand();
-                    buffer = cmd == null ? null : cmd.getCommandType().encode();
+                    if ( cmd == null )
+                    {
+                        buffer = null;
+                    }
+                    else
+                    {
+                        MasterProcessCommand cmdType = cmd.getCommandType();
+                        buffer = cmdType.hasDataType() ? cmdType.encode( cmd.getData() ) : cmdType.encode();
+                    }
                 }
 
                 if ( buffer != null )

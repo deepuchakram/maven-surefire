@@ -40,7 +40,7 @@ public final class NativeStdErrStreamConsumer
     }
 
     @Override
-    public void handleLine( String line )
+    public void consumeLine( String line )
     {
         InPluginProcessDumpSingleton.getSingleton()
                 .dumpStreamText( line, defaultReporterFactory.getReportsDirectory() );

@@ -40,6 +40,7 @@ import static org.apache.maven.surefire.booter.MasterProcessCommand.NOOP;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -50,6 +51,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class TestProvidingInputStreamTest
 {
+    private static final int WAIT_LOOPS = 100;
     @Test
     public void closedStreamShouldReturnNullAsEndOfStream()
         throws IOException
@@ -101,15 +103,16 @@ public class TestProvidingInputStreamTest
             }
         } ).start();
 
-        StringBuilder stream = new StringBuilder();
-        for ( int i = 0; i < 82; i++ )
-        {
-            Command cmd = is.readNextCommand();
-            assertThat( cmd.getData(), is( nullValue() ) );
-            stream.append( new String( cmd.getCommandType().encode(), US_ASCII ) );
-        }
-        assertThat( stream.toString(),
-                is( ":maven-surefire-std-out:testset-finished::maven-surefire-std-out:testset-finished:" ) );
+        Command cmd = is.readNextCommand();
+        assertThat( cmd.getData(), is( nullValue() ) );
+        String stream = new String( cmd.getCommandType().encode(), US_ASCII );
+
+        cmd = is.readNextCommand();
+        assertThat( cmd.getData(), is( nullValue() ) );
+        stream += new String( cmd.getCommandType().encode(), US_ASCII );
+
+        assertThat( stream,
+            is( ":maven-surefire-std-out:testset-finished::maven-surefire-std-out:testset-finished:" ) );
 
         boolean emptyStream = isInputStreamEmpty( is );
 
@@ -134,15 +137,8 @@ public class TestProvidingInputStreamTest
             }
         } ).start();
 
-        StringBuilder stream = new StringBuilder();
-        for ( int i = 0; i < 43; i++ )
-        {
-            Command cmd = is.readNextCommand();
-            assertThat( cmd.getData(), is( nullValue() ) );
-            stream.append( new String( is.readNextCommand().getCommandType().encode(), US_ASCII ) );
-        }
-        assertThat( stream.toString(),
-                is( ":maven-surefire-std-out:run-testclass:Test:" ) );
+        Command cmd = is.readNextCommand();
+        assertThat( cmd.getData(), is( "Test" ) );
 
         is.close();
     }
@@ -223,7 +219,10 @@ public class TestProvidingInputStreamTest
                 {
                     Throwable cause = e.getCause();
                     Throwable err = cause == null ? e : cause;
-                    System.err.println( err.toString() );
+                    if ( !( err instanceof InterruptedException ) )
+                    {
+                        System.err.println( err.toString() );
+                    }
                 }
             }
         } );
@@ -234,7 +233,8 @@ public class TestProvidingInputStreamTest
         {
             sleep( 100L );
             state = t.getState();
-        } while ( state == State.NEW && loops++ < 200 );
+        }
+        while ( state == State.NEW && loops++ < WAIT_LOOPS );
         t.interrupt();
         return state == State.WAITING || state == State.TIMED_WAITING;
     }

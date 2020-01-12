@@ -633,6 +633,12 @@ public class AbstractSurefireMojoJava7PlusTest
         }
 
         @Override
+        protected ForkNodeFactory getForkNode()
+        {
+            return null;
+        }
+
+        @Override
         protected Artifact getMojoArtifact()
         {
             return null;

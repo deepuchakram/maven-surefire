@@ -19,10 +19,11 @@ package org.apache.maven.surefire.extensions;
  * under the License.
  */
 
+import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
+
 /**
  * The line handler of forked process standard-error.
  */
-public interface StdErrStreamLine
+public interface StdErrStreamLine extends StreamConsumer
 {
-    void handleLine( String line );
 }

@@ -19,6 +19,8 @@ package org.apache.maven.surefire.extensions;
  * under the License.
  */
 
+import org.apache.maven.surefire.shared.utils.cli.Commandline;
+
 import javax.annotation.Nonnull;
 import java.util.concurrent.Callable;
 
@@ -28,11 +30,11 @@ import java.util.concurrent.Callable;
 public interface ExecutableCommandline
 {
     @Nonnull
-    <T> Callable<Integer> executeCommandLineAsCallable( @Nonnull T cli,
-                                                        @Nonnull CommandReader commands,
-                                                        @Nonnull EventHandler events,
-                                                        StdOutStreamLine stdOut,
-                                                        StdErrStreamLine stdErr,
-                                                        @Nonnull Runnable runAfterProcessTermination )
+    Callable<Integer> executeCommandLineAsCallable( @Nonnull Commandline cli,
+                                                    @Nonnull CommandReader commands,
+                                                    @Nonnull EventHandler events,
+                                                    StdOutStreamLine stdOut,
+                                                    StdErrStreamLine stdErr,
+                                                    @Nonnull Runnable runAfterProcessTermination )
             throws Exception;
 }

@@ -53,7 +53,8 @@ public final class ClasspathForkConfiguration
                                        @Nonnull ForkNodeFactory forkNodeFactory )
     {
         super( bootClasspath, tempDirectory, debugLine, workingDirectory, modelProperties, argLine,
-                environmentVariables, excludedEnvironmentVariables, debug, forkCount, reuseForks, pluginPlatform, log, forkNodeFactory );
+            environmentVariables, excludedEnvironmentVariables, debug, forkCount, reuseForks, pluginPlatform, log,
+            forkNodeFactory );
     }
 
     @Override
