@@ -39,7 +39,7 @@ jobs:
           java-version: 1.8
 
       - name: Build with Maven
-        run: mvn install -e -B -V -nsu --no-transfer-progress -P run-its
+        run: mvn install -e -B -V -nsu --no-transfer-progress -P run-its -fn
 
       - name: cat dump
         run: cat surefire-logger-api/target/surefire-reports/*.dump
