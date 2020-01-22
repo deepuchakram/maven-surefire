@@ -24,7 +24,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -39,12 +39,4 @@ jobs:
           java-version: 1.8
 
       - name: Build with Maven
-        run: mvn install -e -B -V -nsu --no-transfer-progress -fn -f surefire-logger-api/pom.xml -X
-
-      - uses: actions/upload-artifact@v1
-        with:
-          name: my-artifact
-          path: surefire-logger-api/target
-
-      - name: cat dump
-        run: cd surefire-logger-api/target/surefire-reports && cat *
+        run: mvn install -e -B -V -nsu --no-transfer-progress -P run-its
