@@ -1804,8 +1804,8 @@ public abstract class AbstractSurefireMojo
         getConsoleLogger().debug( testClasspath.getCompactLogMessage( "test(compact) classpath:" ) );
         getConsoleLogger().debug( providerClasspath.getCompactLogMessage( "provider(compact) classpath:" ) );
 
-        Artifact[] additionalInProcArtifacts =
-                { getCommonArtifact(), getExtensionsArtifact(), getApiArtifact(), getLoggerApiArtifact() };
+        Artifact[] additionalInProcArtifacts = { getCommonArtifact(), getExtensionsArtifact(), getApiArtifact(),
+            getSpiArtifact(), getLoggerApiArtifact() };
         Set<Artifact> inProcArtifacts = retainInProcArtifactsUnique( providerArtifacts, additionalInProcArtifacts );
         Classpath inProcClasspath = createInProcClasspath( providerClasspath, inProcArtifacts );
         getConsoleLogger().debug( inProcClasspath.getLogMessage( "in-process classpath:" ) );
@@ -1907,8 +1907,8 @@ public abstract class AbstractSurefireMojo
         ModularClasspath modularClasspath = new ModularClasspath( result.getMainModuleDescriptor().name(),
                 testModulepath.getClassPath(), packages, getTestClassesDirectory() );
 
-        Artifact[] additionalInProcArtifacts =
-                { getCommonArtifact(), getExtensionsArtifact(), getApiArtifact(), getLoggerApiArtifact() };
+        Artifact[] additionalInProcArtifacts = { getCommonArtifact(), getExtensionsArtifact(), getApiArtifact(),
+            getSpiArtifact(), getLoggerApiArtifact() };
         Set<Artifact> inProcArtifacts = retainInProcArtifactsUnique( providerArtifacts, additionalInProcArtifacts );
         Classpath inProcClasspath = createInProcClasspath( providerClasspath, inProcArtifacts );
 
@@ -1936,6 +1936,11 @@ public abstract class AbstractSurefireMojo
     private Artifact getExtensionsArtifact()
     {
         return getPluginArtifactMap().get( "org.apache.maven.surefire:surefire-extensions-api" );
+    }
+
+    private Artifact getSpiArtifact()
+    {
+        return getPluginArtifactMap().get( "org.apache.maven.surefire:surefire-extensions-spi" );
     }
 
     private Artifact getApiArtifact()
