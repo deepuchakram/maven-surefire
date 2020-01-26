@@ -181,11 +181,26 @@ public class AbstractSurefireMojoJava7PlusTest
                 "jar", "", handler );
         loggerApi.setFile( mockFile( "surefire-logger-api.jar" ) );
 
+        Artifact spi = new DefaultArtifact( "org.apache.maven.surefire", "surefire-extensions-spi",
+            createFromVersion( "1" ), "runtime", "jar", "", handler );
+        spi.setFile( mockFile( "surefire-extensions-spi.jar" ) );
+
+        Artifact booter = new DefaultArtifact( "org.apache.maven.surefire", "surefire-booter",
+            createFromVersion( "1" ), "runtime", "jar", "", handler );
+        booter.setFile( mockFile( "surefire-booter.jar" ) );
+
+        Artifact utils = new DefaultArtifact( "org.apache.maven.surefire", "surefire-shared-utils",
+            createFromVersion( "1" ), "runtime", "jar", "", handler );
+        utils.setFile( mockFile( "surefire-shared-utils.jar" ) );
+
         Map<String, Artifact> artifacts = new HashMap<>();
         artifacts.put( "org.apache.maven.surefire:maven-surefire-common", common );
         artifacts.put( "org.apache.maven.surefire:surefire-extensions-api", ext );
         artifacts.put( "org.apache.maven.surefire:surefire-api", api );
         artifacts.put( "org.apache.maven.surefire:surefire-logger-api", loggerApi );
+        artifacts.put( "org.apache.maven.surefire:surefire-extensions-spi", spi );
+        artifacts.put( "org.apache.maven.surefire:surefire-booter", booter );
+        artifacts.put( "org.apache.maven.surefire:surefire-shared-utils", utils );
         when( mojo.getPluginArtifactMap() ).thenReturn( artifacts );
 
         StartupConfiguration conf = invokeMethod( mojo, "newStartupConfigWithModularPath",
@@ -220,8 +235,8 @@ public class AbstractSurefireMojoJava7PlusTest
                         "test(compact) classpath:  non-modular.jar  junit.jar  hamcrest.jar",
                         "test(compact) modulepath:  modular.jar  classes",
                         "provider(compact) classpath:  surefire-provider.jar",
-                        "in-process classpath:  surefire-provider.jar  maven-surefire-common.jar  surefire-extensions-api.jar  surefire-api.jar  surefire-logger-api.jar",
-                        "in-process(compact) classpath:  surefire-provider.jar  maven-surefire-common.jar  surefire-extensions-api.jar  surefire-api.jar  surefire-logger-api.jar"
+                        "in-process classpath:  surefire-provider.jar  maven-surefire-common.jar  surefire-booter.jar  surefire-extensions-api.jar  surefire-api.jar  surefire-extensions-spi.jar  surefire-logger-api.jar  surefire-shared-utils.jar",
+                        "in-process(compact) classpath:  surefire-provider.jar  maven-surefire-common.jar  surefire-booter.jar  surefire-extensions-api.jar  surefire-api.jar  surefire-extensions-spi.jar  surefire-logger-api.jar  surefire-shared-utils.jar"
                 );
 
         assertThat( conf ).isNotNull();

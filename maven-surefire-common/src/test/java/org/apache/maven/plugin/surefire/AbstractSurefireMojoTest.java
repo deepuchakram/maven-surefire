@@ -313,11 +313,26 @@ public class AbstractSurefireMojoTest
                 createFromVersion( "1" ), "runtime", "jar", "", handler );
         loggerApi.setFile( mockFile( "surefire-logger-api.jar" ) );
 
+        Artifact spi = new DefaultArtifact( "org.apache.maven.surefire", "surefire-extensions-spi",
+            createFromVersion( "1" ), "runtime", "jar", "", handler );
+        spi.setFile( mockFile( "surefire-extensions-spi.jar" ) );
+
+        Artifact booter = new DefaultArtifact( "org.apache.maven.surefire", "surefire-booter",
+            createFromVersion( "1" ), "runtime", "jar", "", handler );
+        booter.setFile( mockFile( "surefire-booter.jar" ) );
+
+        Artifact utils = new DefaultArtifact( "org.apache.maven.surefire", "surefire-shared-utils",
+            createFromVersion( "1" ), "runtime", "jar", "", handler );
+        utils.setFile( mockFile( "surefire-shared-utils.jar" ) );
+
         Map<String, Artifact> providerArtifactsMap = new HashMap<>();
         providerArtifactsMap.put( "org.apache.maven.surefire:maven-surefire-common", common );
         providerArtifactsMap.put( "org.apache.maven.surefire:surefire-extensions-api", ext );
         providerArtifactsMap.put( "org.apache.maven.surefire:surefire-api", api );
         providerArtifactsMap.put( "org.apache.maven.surefire:surefire-logger-api", loggerApi );
+        providerArtifactsMap.put( "org.apache.maven.surefire:surefire-extensions-spi", spi );
+        providerArtifactsMap.put( "org.apache.maven.surefire:surefire-booter", booter );
+        providerArtifactsMap.put( "org.apache.maven.surefire:surefire-shared-utils", utils );
 
         when( mojo.getPluginArtifactMap() )
                 .thenReturn( providerArtifactsMap );
@@ -367,8 +382,8 @@ public class AbstractSurefireMojoTest
                 "provider classpath:  surefire-provider.jar",
                 "test(compact) classpath:  test-classes  classes  junit.jar  hamcrest.jar",
                 "provider(compact) classpath:  surefire-provider.jar",
-                "in-process classpath:  surefire-provider.jar  maven-surefire-common.jar  surefire-extensions-api.jar  surefire-api.jar  surefire-logger-api.jar",
-                "in-process(compact) classpath:  surefire-provider.jar  maven-surefire-common.jar  surefire-extensions-api.jar  surefire-api.jar  surefire-logger-api.jar"
+                "in-process classpath:  surefire-provider.jar  maven-surefire-common.jar  surefire-booter.jar  surefire-extensions-api.jar  surefire-api.jar  surefire-extensions-spi.jar  surefire-logger-api.jar  surefire-shared-utils.jar",
+                "in-process(compact) classpath:  surefire-provider.jar  maven-surefire-common.jar  surefire-booter.jar  surefire-extensions-api.jar  surefire-api.jar  surefire-extensions-spi.jar  surefire-logger-api.jar  surefire-shared-utils.jar"
                 );
 
         assertThat( conf.getClassLoaderConfiguration() )
@@ -406,7 +421,7 @@ public class AbstractSurefireMojoTest
         Artifact provider = new DefaultArtifact( "com.example", "provider", createFromVersion( "1" ), "runtime",
                 "jar", "", handler );
         provider.setFile( mockFile( "original-test-provider.jar" ) );
-        HashSet<Artifact> providerClasspath = new HashSet<>( asList( provider ) );
+        Set<Artifact> providerClasspath = singleton( provider );
         when( providerInfo.getProviderClasspath() ).thenReturn( providerClasspath );
 
         StartupConfiguration startupConfiguration = startupConfigurationForProvider( providerInfo );
@@ -449,11 +464,26 @@ public class AbstractSurefireMojoTest
                 createFromVersion( "1" ), "runtime", "jar", "", handler );
         loggerApi.setFile( mockFile( "surefire-logger-api.jar" ) );
 
+        Artifact spi = new DefaultArtifact( "org.apache.maven.surefire", "surefire-extensions-spi",
+            createFromVersion( "1" ), "runtime", "jar", "", handler );
+        spi.setFile( mockFile( "surefire-extensions-spi.jar" ) );
+
+        Artifact booter = new DefaultArtifact( "org.apache.maven.surefire", "surefire-booter",
+            createFromVersion( "1" ), "runtime", "jar", "", handler );
+        booter.setFile( mockFile( "surefire-booter.jar" ) );
+
+        Artifact utils = new DefaultArtifact( "org.apache.maven.surefire", "surefire-shared-utils",
+            createFromVersion( "1" ), "runtime", "jar", "", handler );
+        utils.setFile( mockFile( "surefire-shared-utils.jar" ) );
+
         Map<String, Artifact> providerArtifactsMap = new HashMap<>();
         providerArtifactsMap.put( "org.apache.maven.surefire:maven-surefire-common", common );
         providerArtifactsMap.put( "org.apache.maven.surefire:surefire-extensions-api", ext );
         providerArtifactsMap.put( "org.apache.maven.surefire:surefire-api", api );
         providerArtifactsMap.put( "org.apache.maven.surefire:surefire-logger-api", loggerApi );
+        providerArtifactsMap.put( "org.apache.maven.surefire:surefire-extensions-spi", spi );
+        providerArtifactsMap.put( "org.apache.maven.surefire:surefire-booter", booter );
+        providerArtifactsMap.put( "org.apache.maven.surefire:surefire-shared-utils", utils );
 
         when( mojo.getPluginArtifactMap() ).thenReturn( providerArtifactsMap );
 
