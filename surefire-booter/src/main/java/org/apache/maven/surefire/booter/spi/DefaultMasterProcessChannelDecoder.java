@@ -24,6 +24,7 @@ import org.apache.maven.surefire.booter.Command;
 import org.apache.maven.surefire.booter.MasterProcessCommand;
 import org.apache.maven.surefire.providerapi.MasterProcessChannelDecoder;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -63,7 +64,8 @@ public class DefaultMasterProcessChannelDecoder implements MasterProcessChannelD
         StringBuilder frame = new StringBuilder();
         boolean frameStarted = false;
         boolean frameFinished = false;
-        for ( int r; ( r = is.read() ) != -1 ; )
+        boolean notEndOfStream;
+        for ( int r; notEndOfStream = ( r = is.read() ) != -1 ; )
         {
             char c = (char) r;
             if ( frameFinished && c == '\n' )
@@ -109,6 +111,11 @@ public class DefaultMasterProcessChannelDecoder implements MasterProcessChannelD
                 frameStarted = false;
                 frameFinished = true;
             }
+        }
+
+        if ( !notEndOfStream )
+        {
+            throw new EOFException();
         }
 
         if ( tokens.size() <= 1 )
